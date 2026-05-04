@@ -1,0 +1,11 @@
+2026-04-30 11:03:27,373 | ERROR | Failed to fetch updates - TelegramNetworkError: HTTP Client says - Request timeout error
+2026-04-30 16:19:04,808 | ERROR | Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientOSError: [WinError 64] Указанное сетевое имя более недоступно
+2026-04-30 16:20:17,110 | ERROR | Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientOSError: [WinError 64] Указанное сетевое имя более недоступно
+2026-04-30 16:29:35,663 | ERROR | Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientOSError: [WinError 64] Указанное сетевое имя более недоступно
+2026-04-30 20:47:55,782 | ERROR | Failed to fetch updates - TelegramNetworkError: HTTP Client says - Request timeout error
+2026-04-30 20:47:56,864 | ERROR | Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientConnectorError: Cannot connect to host api.telegram.org:443 ssl:default [Сетевая папка недоступна. За информацией о разрешении проблем в сети обратитесь к справочной системе Windows]
+2026-04-30 20:47:57,978 | ERROR | Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientConnectorError: Cannot connect to host api.telegram.org:443 ssl:default [Сетевая папка недоступна. За информацией о разрешении проблем в сети обратитесь к справочной системе Windows]
+2026-04-30 20:47:59,384 | ERROR | Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientConnectorError: Cannot connect to host api.telegram.org:443 ssl:default [Сетевая папка недоступна. За информацией о разрешении проблем в сети обратитесь к справочной системе Windows]
+2026-04-30 21:32:59,704 | ERROR | Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientConnectorDNSError: Cannot connect to host api.telegram.org:443 ssl:default [getaddrinfo failed]
+2026-05-01 09:18:07,195 | ERROR | Failed to fetch updates - TelegramNetworkError: HTTP Client says - Request timeout error
+2026-05-01 10:18:02,054 | ERROR | Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientOSError: [WinError 121] Превышен таймаут семафора

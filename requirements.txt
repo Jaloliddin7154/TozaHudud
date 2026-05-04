@@ -1,0 +1,7 @@
+aiogram
+aiohttp
+aiosqlite
+SQLAlchemy
+openpyxl
+reportlab
+python-dotenv
