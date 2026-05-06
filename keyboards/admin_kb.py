@@ -41,6 +41,23 @@ def admin_panel_kb() -> ReplyKeyboardMarkup:
     )
 
 
+def region_admin_panel_kb() -> ReplyKeyboardMarkup:
+    """Panel for region admins (can manage admins/channels in own region)."""
+    return ReplyKeyboardMarkup(
+        keyboard=[
+            [
+                KeyboardButton(text="📊 Statistika"),
+                KeyboardButton(text="📥 Hisobot yuklash"),
+            ],
+            [
+                KeyboardButton(text="👥 Admin boshqaruvi"),
+                KeyboardButton(text="📋 Xabarlar ro'yxati"),
+            ],
+        ],
+        resize_keyboard=True,
+    )
+
+
 def report_export_kb() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
@@ -67,6 +84,7 @@ def admin_manage_kb() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [InlineKeyboardButton(text="➕ Admin qo'shish", callback_data="admin_add")],
+            [InlineKeyboardButton(text="🔗 Kanal biriktirish", callback_data="admin_set_channel")],
             [InlineKeyboardButton(text="🗑 Admin o'chirish", callback_data="admin_remove")],
             [InlineKeyboardButton(text="📋 Adminlar ro'yxati", callback_data="admin_list")],
         ]
@@ -168,6 +186,18 @@ def region_new_type_kb(region_id: int) -> InlineKeyboardMarkup:
                     callback_data=f"region_set_type:{region_id}:tuman",
                 ),
             ]
+        ]
+    )
+
+
+def export_period_kb() -> InlineKeyboardMarkup:
+    """First step of export: choose time period."""
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="📅 Bugungi",  callback_data="xper:today")],
+            [InlineKeyboardButton(text="📅 Joriy oy", callback_data="xper:month")],
+            [InlineKeyboardButton(text="📆 Joriy yil", callback_data="xper:year")],
+            [InlineKeyboardButton(text="📋 Barchasi",  callback_data="xper:all")],
         ]
     )
 

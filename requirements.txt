@@ -5,3 +5,4 @@ SQLAlchemy
 openpyxl
 reportlab
 python-dotenv
+aiogram-sqlite-storage

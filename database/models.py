@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import Integer, String, Float, DateTime, ForeignKey
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -15,7 +15,7 @@ class User(Base):
     username: Mapped[str | None] = mapped_column(String(100))
     full_name: Mapped[str | None] = mapped_column(String(200))
     phone: Mapped[str | None] = mapped_column(String(20))
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     reports: Mapped[list["Report"]] = relationship("Report", back_populates="user")
 
@@ -32,7 +32,7 @@ class Report(Base):
     district: Mapped[str | None] = mapped_column(String(100))
     address: Mapped[str | None] = mapped_column(String(500))
     status: Mapped[str] = mapped_column(String(50), default="new")
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     user: Mapped["User"] = relationship("User", back_populates="reports")
 
@@ -46,8 +46,9 @@ class Admin(Base):
     full_name: Mapped[str | None] = mapped_column(String(200))
     region: Mapped[str | None] = mapped_column(String(100))
     district: Mapped[str | None] = mapped_column(String(100))
+    channel_id: Mapped[str | None] = mapped_column(String(100))
     role: Mapped[str] = mapped_column(String(50), default="admin")
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
 
 
 class Region(Base):

@@ -6,14 +6,16 @@ from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.enums import ParseMode
-from aiogram.fsm.storage.memory import MemoryStorage
+from aiogram_sqlite_storage.sqlitestore import SQLStorage
 from aiogram.types import BotCommand, BotCommandScopeAllPrivateChats, BotCommandScopeChat
 
-from config import BOT_TOKEN, SUPERADMIN_ID, DEFAULT_ADMIN_IDS
-from database.db import init_db
+from config import BOT_TOKEN, SUPERADMIN_ID, DEFAULT_ADMIN_IDS, ADMIN_ASSIGNMENTS
+from database.db import init_db, async_session
 from handlers.admin import router as admin_router
 from handlers.user import router as user_router
 from middlewares.logging_middleware import UpdateLoggingMiddleware
+from middlewares.rate_limit import RateLimitMiddleware
+from services.admin_seed import seed_admin_assignments
 from utils.logging_setup import setup_logging
 
 setup_logging()
@@ -34,13 +36,23 @@ async def main() -> None:
     await init_db()
     logger.info("Ma'lumotlar bazasi tayyor.")
 
+    if ADMIN_ASSIGNMENTS:
+        async with async_session() as session:
+            created, updated = await seed_admin_assignments(session, ADMIN_ASSIGNMENTS)
+            logger.info(
+                "ADMIN_ASSIGNMENTS qo'llandi: created=%s updated=%s",
+                created,
+                updated,
+            )
+
     bot = Bot(
         token=BOT_TOKEN,
         session=AiohttpSession(timeout=15),
         default=DefaultBotProperties(parse_mode=ParseMode.HTML),
     )
-    dp = Dispatcher(storage=MemoryStorage())
+    dp = Dispatcher(storage=SQLStorage("fsm_storage.db"))
     dp.update.outer_middleware(UpdateLoggingMiddleware())
+    dp.message.outer_middleware(RateLimitMiddleware())
 
     # Admin router MUST be registered first (higher priority for shared filters)
     dp.include_router(admin_router)

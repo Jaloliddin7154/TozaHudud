@@ -17,11 +17,19 @@ class AdminAddRegion(StatesGroup):
 
 class AdminAddAdmin(StatesGroup):
     waiting_telegram_id = State()
+    waiting_role = State()
+    waiting_region = State()
     waiting_district = State()
+    waiting_channel = State()
 
 
 class AdminRemoveAdmin(StatesGroup):
     waiting_telegram_id = State()
+
+
+class AdminSetChannel(StatesGroup):
+    waiting_telegram_id = State()
+    waiting_channel = State()
 
 
 class AdminEditRegion(StatesGroup):

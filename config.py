@@ -20,6 +20,7 @@ REPORTS_CHANNEL_ID: str = os.getenv("REPORTS_CHANNEL_ID", "").strip()
 
 LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
 LOG_DIR: str = os.getenv("LOG_DIR", "logs")
+ADMIN_ASSIGNMENTS: str = os.getenv("ADMIN_ASSIGNMENTS", "").strip()
 
 # Reverse geocoding performance settings
 GEOCODE_CACHE_TTL_SEC: int = int(os.getenv("GEOCODE_CACHE_TTL_SEC", "1800"))

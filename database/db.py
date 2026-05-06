@@ -9,6 +9,13 @@ engine = create_async_engine(DATABASE_URL, echo=False)
 async_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 
+async def _ensure_column(conn, table: str, column: str, column_type: str) -> None:
+    rows = await conn.execute(text(f"PRAGMA table_info({table})"))
+    existing = {r[1] for r in rows.fetchall()}
+    if column not in existing:
+        await conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {column} {column_type}"))
+
+
 async def init_db() -> None:
     async with engine.begin() as conn:
         # SQLite tuning: improves write/read throughput for bot workload.
@@ -18,6 +25,9 @@ async def init_db() -> None:
         await conn.execute(text("PRAGMA cache_size=-20000"))
 
         await conn.run_sync(Base.metadata.create_all)
+
+        # Lightweight migrations for existing SQLite databases.
+        await _ensure_column(conn, "admins", "channel_id", "TEXT")
 
         # Ensure indexes exist for hot query paths.
         await conn.execute(
@@ -34,4 +44,7 @@ async def init_db() -> None:
         )
         await conn.execute(
             text("CREATE INDEX IF NOT EXISTS idx_admins_district ON admins(district)")
+        )
+        await conn.execute(
+            text("CREATE INDEX IF NOT EXISTS idx_admins_region ON admins(region)")
         )

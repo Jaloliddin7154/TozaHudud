@@ -246,7 +246,7 @@ async def process_location(message: Message, state: FSMContext, bot: Bot) -> Non
                 region, district, address,
             )
             report_id = report.id
-            admin_ids = await report_service.get_notify_admin_ids(
+            admin_ids, channel_ids = await report_service.get_delivery_targets(
                 session, region, district
             )
 
@@ -271,17 +271,19 @@ async def process_location(message: Message, state: FSMContext, bot: Bot) -> Non
             f"📡 Koordinatasi: {gps}"
         )
 
-        # ── 4. Send to all admins + channel concurrently ──────────────────────
+        # ── 4. Send to scoped admins + scoped channels concurrently ───────────
         tasks = [
             _send_to_admin(bot, aid, photo_file_id, admin_caption, report_id, lat, lon)
             for aid in admin_ids
         ]
-        if REPORTS_CHANNEL_ID:
+        for channel_id in channel_ids:
             tasks.append(
-                _send_to_channel(
-                    bot, REPORTS_CHANNEL_ID, photo_file_id, channel_caption, lat, lon
-                )
+                _send_to_channel(bot, channel_id, photo_file_id, channel_caption, lat, lon)
             )
+
+        # Optional global fallback channel (kept for backward compatibility).
+        if REPORTS_CHANNEL_ID and REPORTS_CHANNEL_ID not in channel_ids:
+            tasks.append(_send_to_channel(bot, REPORTS_CHANNEL_ID, photo_file_id, channel_caption, lat, lon))
 
         results = await asyncio.gather(*tasks, return_exceptions=True)
         sent_count = sum(1 for r in results[: len(admin_ids)] if r is True)
