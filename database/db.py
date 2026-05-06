@@ -48,3 +48,15 @@ async def init_db() -> None:
         await conn.execute(
             text("CREATE INDEX IF NOT EXISTS idx_admins_region ON admins(region)")
         )
+        await conn.execute(
+            text(
+                "CREATE INDEX IF NOT EXISTS idx_relay_bot_msg "
+                "ON relay_messages(bot_message_id)"
+            )
+        )
+        await conn.execute(
+            text(
+                "CREATE INDEX IF NOT EXISTS idx_relay_created_at "
+                "ON relay_messages(created_at)"
+            )
+        )

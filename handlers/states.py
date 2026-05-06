@@ -35,7 +35,3 @@ class AdminSetChannel(StatesGroup):
 class AdminEditRegion(StatesGroup):
     waiting_new_name = State()
     waiting_new_type = State()
-
-
-class AdminExport(StatesGroup):
-    waiting_format = State()

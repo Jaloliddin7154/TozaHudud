@@ -1,7 +1,7 @@
 from datetime import datetime, timezone, timedelta
 from sqlalchemy import select, func, desc
 from sqlalchemy.ext.asyncio import AsyncSession
-from database.models import Report, User, Admin
+from database.models import Report, User, Admin, ReportStatus
 from config import SUPERADMIN_ID, DEFAULT_ADMIN_IDS
 
 
@@ -23,7 +23,7 @@ async def create_report(
         region=region,
         district=district,
         address=address,
-        status="new",
+        status=ReportStatus.NEW,
     )
     session.add(report)
     await session.commit()
@@ -130,15 +130,17 @@ async def update_report_geo(
 async def get_report_with_user(
     session: AsyncSession, report_id: int
 ) -> tuple[Report | None, User | None]:
-    stmt = select(Report).where(Report.id == report_id)
+    from sqlalchemy.orm import joinedload
+    stmt = (
+        select(Report)
+        .options(joinedload(Report.user))
+        .where(Report.id == report_id)
+    )
     result = await session.execute(stmt)
-    report = result.scalar_one_or_none()
+    report = result.unique().scalar_one_or_none()
     if not report:
         return None, None
-    user_stmt = select(User).where(User.id == report.user_id)
-    user_result = await session.execute(user_stmt)
-    user = user_result.scalar_one_or_none()
-    return report, user
+    return report, report.user
 
 
 def _apply_scope(stmt, region: str | None, district: str | None):

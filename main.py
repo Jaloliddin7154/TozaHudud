@@ -17,6 +17,7 @@ from middlewares.logging_middleware import UpdateLoggingMiddleware
 from middlewares.rate_limit import RateLimitMiddleware
 from services.admin_seed import seed_admin_assignments
 from utils.logging_setup import setup_logging
+from utils.relay import relay_cleanup_old
 
 setup_logging()
 logger = logging.getLogger(__name__)
@@ -35,6 +36,10 @@ async def main() -> None:
 
     await init_db()
     logger.info("Ma'lumotlar bazasi tayyor.")
+
+    deleted = await relay_cleanup_old()
+    if deleted:
+        logger.info("Relay cleanup: %d eski yozuv o'chirildi.", deleted)
 
     if ADMIN_ASSIGNMENTS:
         async with async_session() as session:

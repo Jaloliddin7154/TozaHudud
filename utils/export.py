@@ -357,8 +357,8 @@ def export_to_pdf(reports: list[Report], stats: dict) -> bytes:
 
     by_status = stats.get("by_status", {})
     if by_status:
-        _s = {"new": "Yangi", "in_progress": "Jarayonda", "done": "Bajarildi", "rejected": "Rad etildi"}
-        status_text = " | ".join(f"{_s.get(k, k)}: {v}" for k, v in by_status.items())
+        _uz = {"new": "Yangi", "in_progress": "Jarayonda", "done": "Bajarildi", "rejected": "Rad etildi"}
+        status_text = " | ".join(f"{_uz.get(k, k)}: {v}" for k, v in by_status.items())
         elements.append(Paragraph(f"<b>Status bo'yicha:</b> {status_text}", body_style))
 
     elements.append(Spacer(1, 14))

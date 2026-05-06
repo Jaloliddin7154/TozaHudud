@@ -81,6 +81,10 @@ async def reverse_geocode(lat: float, lon: float) -> dict:
             "address": address_str,
         }
         _cache[key] = (now, result)
+        # Evict stale entries to prevent unbounded memory growth.
+        stale = [k for k, (ts, _) in _cache.items() if now - ts >= GEOCODE_CACHE_TTL_SEC]
+        for k in stale:
+            _cache.pop(k, None)
         return result
 
     except Exception as e:

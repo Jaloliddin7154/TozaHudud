@@ -34,10 +34,11 @@ from keyboards.admin_kb import (
     export_district_filter_kb,
     export_format_kb,
 )
+from database.models import ReportStatus
 from middlewares.auth import is_admin, is_superadmin, get_admin_scope
 from services import report as report_service
 from utils.export import export_to_excel, export_to_pdf
-from utils.relay import relay_map
+from utils.relay import relay_get, relay_set
 
 
 class AdminFilter(BaseFilter):
@@ -49,10 +50,25 @@ logger = logging.getLogger(__name__)
 router = Router()
 
 STATUS_NAMES: dict[str, str] = {
-    "done": "✅ Bajarildi",
-    "in_progress": "🔄 Jarayonda",
-    "rejected": "❌ Rad etildi",
+    ReportStatus.DONE:        "✅ Bajarildi",
+    ReportStatus.IN_PROGRESS: "🔄 Jarayonda",
+    ReportStatus.REJECTED:    "❌ Rad etildi",
 }
+
+STATUS_UZ: dict[str, str] = {
+    ReportStatus.NEW:         "Yangi",
+    ReportStatus.IN_PROGRESS: "Jarayonda",
+    ReportStatus.DONE:        "Bajarildi",
+    ReportStatus.REJECTED:    "Rad etildi",
+}
+
+
+def _parse_tg_id(text: str) -> int | None:
+    """Parse a Telegram ID string. Returns None if invalid."""
+    try:
+        return int(text.strip())
+    except ValueError:
+        return None
 
 
 def _is_admin_manager(scope: dict) -> bool:
@@ -154,7 +170,6 @@ async def show_stats(message: Message) -> None:
             session, district=district, region=region, limit=3
         )
 
-    STATUS_UZ = {"new": "Yangi", "in_progress": "Jarayonda", "done": "Bajarildi", "rejected": "Rad etildi"}
     status_lines = "\n".join(
         f"  • {STATUS_UZ.get(k, k)}: <b>{v}</b>" for k, v in stats["by_status"].items()
     ) or "  Yo'q"
@@ -168,8 +183,9 @@ async def show_stats(message: Message) -> None:
         for i, u in enumerate(user_stats)
     ) or "  Yo'q"
 
+    no_address = "Manzil yo'q"
     hot_lines = "\n".join(
-        f"  🔴 {loc['address'] or 'Manzil yo'q'} ({loc['district'] or '?'}) — <b>{loc['count']}</b> marta"
+        f"  🔴 {loc['address'] or no_address} ({loc['district'] or '?'}) — <b>{loc['count']}</b> marta"
         for loc in loc_stats
     ) or "  Yo'q"
 
@@ -376,7 +392,10 @@ async def update_status_cb(callback: CallbackQuery, bot: Bot) -> None:
         await callback.answer("⛔ Ruxsat yo'q", show_alert=True)
         return
 
-    _, new_status, report_id_str = callback.data.split(":")
+    _, new_status, report_id_str = callback.data.split(":", 2)
+    if new_status not in ReportStatus.__members__.values():
+        await callback.answer("⚠️ Noma'lum status", show_alert=True)
+        return
     report_id = int(report_id_str)
 
     async with async_session() as session:
@@ -392,9 +411,9 @@ async def update_status_cb(callback: CallbackQuery, bot: Bot) -> None:
     # Notify user
     if user:
         status_text = {
-            "done": "✅ Muammo hal qilindi",
-            "in_progress": "🔄 Muammo ko'rib chiqilmoqda",
-            "rejected": "❌ Xabar rad etildi",
+            ReportStatus.DONE:        "✅ Muammo hal qilindi",
+            ReportStatus.IN_PROGRESS: "🔄 Muammo ko'rib chiqilmoqda",
+            ReportStatus.REJECTED:    "❌ Xabar rad etildi",
         }.get(new_status, new_status)
         try:
             await bot.send_message(
@@ -436,7 +455,7 @@ async def add_region_start(message: Message, state: FSMContext) -> None:
     await message.answer("🗺 Yangi hudud nomini kiriting (masalan: Samarqand viloyati):")
 
 
-@router.message(AdminAddRegion.waiting_name, F.text)
+@router.message(AdminAddRegion.waiting_name, AdminFilter(), F.text)
 async def add_region_name(message: Message, state: FSMContext) -> None:
     await state.update_data(region_name=message.text.strip())
     await state.set_state(AdminAddRegion.waiting_type)
@@ -540,7 +559,7 @@ async def region_edit_name_cb(callback: CallbackQuery, state: FSMContext) -> Non
     await callback.answer()
 
 
-@router.message(AdminEditRegion.waiting_new_name, F.text)
+@router.message(AdminEditRegion.waiting_new_name, AdminFilter(), F.text)
 async def region_save_new_name(message: Message, state: FSMContext) -> None:
     data = await state.get_data()
     region_id: int = data["edit_region_id"]
@@ -581,7 +600,7 @@ async def region_set_type_cb(callback: CallbackQuery) -> None:
     if not await is_superadmin(callback.from_user.id):
         await callback.answer("⛔ Ruxsat yo'q", show_alert=True)
         return
-    _, region_id_str, new_type = callback.data.split(":")
+    _, region_id_str, new_type = callback.data.split(":", 2)
     region_id = int(region_id_str)
     async with async_session() as session:
         region = await session.get(Region, region_id)
@@ -671,13 +690,13 @@ async def add_admin_start(callback: CallbackQuery, state: FSMContext) -> None:
     await callback.answer()
 
 
-@router.message(AdminAddAdmin.waiting_telegram_id, F.text)
+@router.message(AdminAddAdmin.waiting_telegram_id, AdminFilter(), F.text)
 async def add_admin_get_id(message: Message, state: FSMContext) -> None:
-    text = message.text.strip()
-    if not text.lstrip("-").isdigit():
+    tg_id = _parse_tg_id(message.text)
+    if tg_id is None:
         await message.answer("⚠️ Telegram ID faqat raqamlardan iborat bo'lishi kerak. Qayta kiriting:")
         return
-    await state.update_data(new_admin_tg_id=int(text))
+    await state.update_data(new_admin_tg_id=tg_id)
 
     data = await state.get_data()
     if data.get("creator_role") == "region_admin":
@@ -699,10 +718,11 @@ async def add_admin_get_id(message: Message, state: FSMContext) -> None:
     )
 
 
-@router.message(AdminAddAdmin.waiting_role, F.text)
+@router.message(AdminAddAdmin.waiting_role, AdminFilter(), F.text)
 async def add_admin_get_role(message: Message, state: FSMContext) -> None:
     data = await state.get_data()
     if data.get("creator_role") == "region_admin":
+        await state.clear()
         await message.answer("⚠️ Siz uchun rol avtomatik: <b>admin</b> (tuman darajasi).")
         return
 
@@ -725,10 +745,11 @@ async def add_admin_get_role(message: Message, state: FSMContext) -> None:
     )
 
 
-@router.message(AdminAddAdmin.waiting_region, F.text)
+@router.message(AdminAddAdmin.waiting_region, AdminFilter(), F.text)
 async def add_admin_get_region(message: Message, state: FSMContext) -> None:
     data = await state.get_data()
     if data.get("creator_role") == "region_admin":
+        await state.clear()
         await message.answer("⚠️ Viloyat siz uchun avtomatik belgilanadi.")
         return
 
@@ -756,7 +777,7 @@ async def add_admin_get_region(message: Message, state: FSMContext) -> None:
     )
 
 
-@router.message(AdminAddAdmin.waiting_district, F.text)
+@router.message(AdminAddAdmin.waiting_district, AdminFilter(), F.text)
 async def add_admin_get_district(message: Message, state: FSMContext) -> None:
     district = message.text.strip()
     if not district:
@@ -770,7 +791,7 @@ async def add_admin_get_district(message: Message, state: FSMContext) -> None:
     )
 
 
-@router.message(AdminAddAdmin.waiting_channel, F.text)
+@router.message(AdminAddAdmin.waiting_channel, AdminFilter(), F.text)
 async def add_admin_get_channel(message: Message, state: FSMContext) -> None:
     data = await state.get_data()
     new_tg_id: int = data["new_admin_tg_id"]
@@ -840,14 +861,12 @@ async def remove_admin_start(callback: CallbackQuery, state: FSMContext) -> None
     await callback.answer()
 
 
-@router.message(AdminRemoveAdmin.waiting_telegram_id, F.text)
+@router.message(AdminRemoveAdmin.waiting_telegram_id, AdminFilter(), F.text)
 async def remove_admin_by_id(message: Message, state: FSMContext) -> None:
-    text = message.text.strip()
-    if not text.lstrip("-").isdigit():
+    tg_id = _parse_tg_id(message.text)
+    if tg_id is None:
         await message.answer("⚠️ Telegram ID raqam bo'lishi kerak. Qayta kiriting:")
         return
-
-    tg_id = int(text)
     data = await state.get_data()
     actor_scope = _actor_scope_from_state(data)
 
@@ -921,14 +940,12 @@ async def set_channel_start(callback: CallbackQuery, state: FSMContext) -> None:
     await callback.answer()
 
 
-@router.message(AdminSetChannel.waiting_telegram_id, F.text)
+@router.message(AdminSetChannel.waiting_telegram_id, AdminFilter(), F.text)
 async def set_channel_get_admin_id(message: Message, state: FSMContext) -> None:
-    text = message.text.strip()
-    if not text.lstrip("-").isdigit():
+    tg_id = _parse_tg_id(message.text)
+    if tg_id is None:
         await message.answer("⚠️ Telegram ID raqam bo'lishi kerak. Qayta kiriting:")
         return
-
-    tg_id = int(text)
     data = await state.get_data()
     actor_scope = _actor_scope_from_state(data)
 
@@ -951,7 +968,7 @@ async def set_channel_get_admin_id(message: Message, state: FSMContext) -> None:
     await message.answer("Yangi kanal ID kiriting (masalan: <code>-1001234567890</code>):")
 
 
-@router.message(AdminSetChannel.waiting_channel, F.text)
+@router.message(AdminSetChannel.waiting_channel, AdminFilter(), F.text)
 async def set_channel_save(message: Message, state: FSMContext) -> None:
     channel_id = message.text.strip()
     if not channel_id:
@@ -990,7 +1007,7 @@ async def set_channel_save(message: Message, state: FSMContext) -> None:
 @router.message(AdminFilter(), F.reply_to_message)
 async def relay_admin_reply(message: Message, bot: Bot) -> None:
     original_msg_id = message.reply_to_message.message_id
-    user_tg_id = relay_map.get(original_msg_id)
+    user_tg_id = await relay_get(original_msg_id)
 
     if not user_tg_id:
         return  # Not a tracked relay message
@@ -1000,7 +1017,12 @@ async def relay_admin_reply(message: Message, bot: Bot) -> None:
             user_tg_id,
             f"💬 <b>Admin javobi:</b>\n\n{message.text or '[Media]'}",
         )
-        await message.react([])  # Acknowledge (aiogram 3.4+)
     except Exception as e:
         logger.error("Relay reply failed for user %s: %s", user_tg_id, e)
         await message.answer("⚠️ Foydalanuvchiga xabar yuborishda xatolik yuz berdi.")
+        return
+
+    try:
+        await message.react([])  # Acknowledge with empty reaction (aiogram 3.4+)
+    except Exception:
+        pass  # Non-critical: reaction may fail if bot lacks permission

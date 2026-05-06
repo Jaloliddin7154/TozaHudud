@@ -1,6 +1,15 @@
 from datetime import datetime, timezone
+from enum import StrEnum
+
 from sqlalchemy import Integer, String, Float, DateTime, ForeignKey
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+
+
+class ReportStatus(StrEnum):
+    NEW         = "new"
+    IN_PROGRESS = "in_progress"
+    DONE        = "done"
+    REJECTED    = "rejected"
 
 
 class Base(DeclarativeBase):
@@ -31,7 +40,7 @@ class Report(Base):
     region: Mapped[str | None] = mapped_column(String(100))
     district: Mapped[str | None] = mapped_column(String(100))
     address: Mapped[str | None] = mapped_column(String(500))
-    status: Mapped[str] = mapped_column(String(50), default="new")
+    status: Mapped[str] = mapped_column(String(50), default=ReportStatus.NEW)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     user: Mapped["User"] = relationship("User", back_populates="reports")
@@ -58,3 +67,15 @@ class Region(Base):
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     type: Mapped[str] = mapped_column(String(50))  # viloyat / tuman
     parent_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("regions.id"), nullable=True)
+
+
+class RelayMessage(Base):
+    """Maps a bot-side message_id to the originating user's telegram_id."""
+    __tablename__ = "relay_messages"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    bot_message_id: Mapped[int] = mapped_column(Integer, unique=True, nullable=False)
+    user_telegram_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(timezone.utc)
+    )

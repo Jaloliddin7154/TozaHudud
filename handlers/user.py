@@ -16,7 +16,7 @@ from keyboards.admin_kb import report_status_kb
 from keyboards.user_kb import main_menu_kb, request_location_kb, cancel_kb
 from services import location as location_service
 from services import report as report_service
-from utils.relay import relay_map
+from utils.relay import relay_set
 
 logger = logging.getLogger(__name__)
 perf_logger = logging.getLogger("performance")
@@ -381,7 +381,7 @@ async def contact_admin_send(message: Message, state: FSMContext, bot: Bot) -> N
     for admin_id in admin_ids:
         try:
             sent_msg = await bot.send_message(admin_id, user_text)
-            relay_map[sent_msg.message_id] = message.from_user.id
+            await relay_set(sent_msg.message_id, message.from_user.id)
             sent += 1
         except Exception as e:
             logger.error("Error sending contact message to admin %s: %s", admin_id, e)
