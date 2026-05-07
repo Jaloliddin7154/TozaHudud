@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from sqlalchemy import select
 from database.db import async_session
 from database.models import Admin

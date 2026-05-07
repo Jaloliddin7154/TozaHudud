@@ -1,0 +1,118 @@
+====================================================
+  GITHUB GA PUSH QILISH — QADAMBA-QADAM QO'LLANMA
+====================================================
+
+--------------------------------------------------
+1. BIR MARTALIK SOZLASH (faqat birinchi safar)
+--------------------------------------------------
+
+Git kimligingizni kiriting (GitHub username va email):
+
+    git config --global user.name "YourGitHubUsername"
+    git config --global user.email "your@email.com"
+
+
+--------------------------------------------------
+2. ODDIY PUSH — HAR SAFAR ISHLATILADIGAN BUYRUQLAR
+--------------------------------------------------
+
+Quyidagi 3 ta buyruqni tartib bilan bajaring:
+
+  1) Qaysi fayllar o'zgardi — ko'rish:
+        git status
+
+  2) O'zgargan fayllarni staging ga qo'shish:
+        git add .
+     (yoki faqat bitta fayl):
+        git add handlers/admin.py
+
+  3) Commit — o'zgarishlarni saqlash:
+        git commit -m "O'zgarish tavsifi shu yerga"
+
+  4) GitHub ga yuborish:
+        git push origin main
+
+
+--------------------------------------------------
+3. MISOL — AMALIY KO'RINISH
+--------------------------------------------------
+
+    git status
+    git add .
+    git commit -m "Python 3.9 ga moslashtirish"
+    git push origin main
+
+Shundan keyin GitHub sizdan username va token so'raydi
+(agar avval saqlanmagan bo'lsa).
+
+
+--------------------------------------------------
+4. PAROL O'RNIGA TOKEN ISHLATISH (tavsiya etiladi)
+--------------------------------------------------
+
+GitHub 2021 yildan boshlab parol o'rniga
+Personal Access Token talab qiladi.
+
+Token olish:
+  1. github.com ga kiring
+  2. Settings > Developer settings > Personal access tokens > Tokens (classic)
+  3. "Generate new token" bosing
+  4. "repo" checkboxini belgilang
+  5. Tokenni nusxalab oling (bir marta ko'rsatiladi!)
+
+Push paytida so'ralganda:
+  Username: GitHub username ingiz
+  Password: yuqoridagi token (parol emas!)
+
+Tokenni eslab qolishi uchun (qayta so'ramasin):
+    git config --global credential.helper store
+
+
+--------------------------------------------------
+5. SERVER (Linux) DA PUSH QILISH
+--------------------------------------------------
+
+Serverda SSH kalit ishlatish osonroq:
+
+  a) SSH kalit yaratish:
+        ssh-keygen -t ed25519 -C "your@email.com"
+        cat ~/.ssh/id_ed25519.pub
+
+  b) Chiqgan matnni GitHub ga qo'shish:
+        github.com > Settings > SSH and GPG keys > New SSH key
+
+  c) Remote URL ni SSH ga o'zgartirish:
+        git remote set-url origin git@github.com:Jaloliddin7154/TozaHudud.git
+
+  d) Endi push qilish:
+        git push origin main
+
+  (Bu usulda har safar parol/token kiritish shart emas)
+
+
+--------------------------------------------------
+6. FOYDALI BUYRUQLAR
+--------------------------------------------------
+
+  Oxirgi commitlarni ko'rish:
+        git log --oneline -10
+
+  Remote URL ni ko'rish:
+        git remote -v
+
+  Hozirgi branch:
+        git branch
+
+  Barcha o'zgarishlarni bekor qilish (ehtiyotkorlik!):
+        git restore .
+
+
+--------------------------------------------------
+7. BU LOYIHA UCHUN REMOTE URL
+--------------------------------------------------
+
+  https://github.com/Jaloliddin7154/TozaHudud.git
+  yoki SSH:
+  git@github.com:Jaloliddin7154/TozaHudud.git
+
+====================================================

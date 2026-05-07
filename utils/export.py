@@ -1,4 +1,6 @@
 """Excel and PDF export utilities for Toza Hudud."""
+from __future__ import annotations
+
 import io
 from datetime import datetime, timezone
 

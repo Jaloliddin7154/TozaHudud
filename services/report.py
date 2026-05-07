@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from datetime import datetime, timezone, timedelta
 from sqlalchemy import select, func, desc
 from sqlalchemy.ext.asyncio import AsyncSession
